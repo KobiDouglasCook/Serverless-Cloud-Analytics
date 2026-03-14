@@ -2,9 +2,8 @@ import json
 import boto3
 from datetime import datetime
 
-# Commented out until infra is deployed
-# dynamodb = boto3.resource("dynamodb")
-# events_table = dynamodb.Table("AnalyticsEvents")
+dynamodb = boto3.resource("dynamodb")
+events_table = dynamodb.Table("AnalyticsEvents")
 
 def lambda_handler(event, context):
     # EventBridge sends events in an array under "Records" or directly as "detail"
@@ -21,16 +20,16 @@ def lambda_handler(event, context):
             "body": json.dumps({"error": "shortCode missing in analytics event"})
         }
 
-    # Placeholder for DynamoDB write
-    # events_table.put_item(
-    #     Item={
-    #         "shortCode": short_code,
-    #         "timestamp": timestamp,
-    #         "userAgent": detail.get("userAgent"),
-    #         "ip": detail.get("ip"),
-    #         "country": detail.get("country")
-    #     }
-    # )
+    # Write the analytics event to DynamoDB
+    events_table.put_item(
+        Item={
+            "shortCode": short_code,
+            "timestamp": timestamp,
+            "userAgent": detail.get("userAgent"),
+            "ip": detail.get("ip"),
+            "country": detail.get("country")
+        }
+    )
 
     return {
         "statusCode": 200,

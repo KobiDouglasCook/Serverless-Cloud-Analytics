@@ -38,7 +38,7 @@ def lambda_handler(event, context):
         "clickCount": 0
     }
 
-    #table.put_item(Item=item)
+    table.put_item(Item=item)
 
     return { 
         "statusCode": 200,
