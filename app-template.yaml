@@ -1,0 +1,161 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless URL Shortener with Analytics
+
+Globals:
+  Function:
+    Timeout: 5
+    Runtime: python3.12
+    Tracing: Active
+    MemorySize: 256
+
+Resources:
+  # DynamoDB tables for storing URL mappings and analytics events with appropriate key schemas, billing mode,
+  # and TTL for URLTable to automatically expire old entries.
+
+  UrlTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: UrlTable
+      AttributeDefinitions:
+        - AttributeName: shortCode
+          AttributeType: S
+      KeySchema:
+        - AttributeName: shortCode
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        Enabled: true
+        AttributeName: ttl
+
+  AnalyticsEvent:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: AnalyticsEvent
+      AttributeDefinitions:
+        - AttributeName: shortCode
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: shortCode
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  # Lambda functions for URL shortening, redirection, and analytics processing with appropriate permissions and event triggers
+
+  ShortenFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/shorten/app.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: UrlTable
+      Events:
+        ShortenApi:
+          Type: Api
+          Properties:
+            Path: /shorten
+            Method: POST
+
+  RedirectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/redirect/app.lambda_handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: UrlTable
+        - EventBridgePutEventsPolicy:
+            EventBusName: default
+      Events:
+        RedirectApi:
+          Type: Api
+          Properties:
+            Path: /{shortCode}
+            Method: GET
+
+  AnalyticsProcessor:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/analytics/app.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: AnalyticsEvent
+      Events:
+        AnalyticsEventRule:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - "url-shortener.redirect"
+
+  # Frontend S3 bucket to host the static website with public access blocked and versioning enabled for better management
+
+  FrontEndBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-frontend"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+  # CloudFront distribution to serve the frontend from S3 with Origin Access Identity for secure access
+
+  FrontendDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - Id: FrontendOrigin
+            DomainName: !GetAtt FrontEndBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${FrontendOriginAccessIdentity}"
+        DefaultCacheBehavior:
+          TargetOriginId: FrontendOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        PriceClass: PriceClass_100
+
+  # Frontend Origin Access Identity to securely allow CloudFront to access the S3 bucket without making it public,
+  # along with a bucket policy to grant the necessary permissions.
+
+  FrontendOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "Access Identity for ${AWS::StackName} frontend"
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontEndBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt FrontendOriginAccessIdentity.S3CanonicalUserId
+            Action: s3:GetObject
+            Resource: !Sub "${FrontEndBucket}/*"
