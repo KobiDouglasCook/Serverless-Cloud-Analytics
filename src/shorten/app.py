@@ -5,6 +5,8 @@ import string
 import random 
 from datetime import datetime, timedelta
 
+CLOUDFRONT_DOMAIN = os.environ("CLOUDFRONT_DOMAIN")
+
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table("UrlTable")
 
@@ -44,7 +46,7 @@ def lambda_handler(event, context):
         "statusCode": 200,
         "body": json.dumps({
             "shortCode": short_code,
-            "shortUrl": f"https://fuegodomain.com/{short_code}",
+            "shortUrl": f"https://{CLOUDFRONT_DOMAIN}/r/{short_code}",
             "expiresAt": ttl_timestamp
         })
     }

@@ -2,6 +2,12 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Serverless URL Shortener with Analytics
 
+Parameters:
+  CloudFrontDomainParam:
+    Type: String
+    Default: "d2tw8akj4z99nh.cloudfront.net" # Default value for local testing, should be overridden
+    Description: "CloudFront distribution domain name for constructing short URLs"
+
 Globals:
   Function:
     Timeout: 5
@@ -57,6 +63,9 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: UrlTable
+      Environment:
+        Variables:
+          CLOUDFRONT_DOMAIN: !Ref CloudFrontDomainParam
       Events:
         ShortenApi:
           Type: Api

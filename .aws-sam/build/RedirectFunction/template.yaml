@@ -77,7 +77,7 @@ Resources:
         RedirectApi:
           Type: Api
           Properties:
-            Path: /{shortCode}
+            Path: /r/{shortCode}
             Method: GET
 
   AnalyticsProcessor:
@@ -150,6 +150,15 @@ Resources:
               QueryString: true
               Cookies:
                 Forward: none
+          - PathPattern: "/r/*"
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS]
+            CachedMethods: [GET, HEAD]
+            ForwardedValues:
+              QueryString: true
+              Cookies:
+                Forward: none
 
         DefaultCacheBehavior:
           TargetOriginId: FrontendOrigin
@@ -182,7 +191,6 @@ Resources:
 
   FrontendBucketPolicy:
     Type: AWS::S3::BucketPolicy
-    DependsOn: FrontEndBucket
     Properties:
       Bucket: !Ref FrontEndBucket
       PolicyDocument:
@@ -193,19 +201,29 @@ Resources:
             Principal:
               CanonicalUser: !GetAtt FrontendOriginAccessIdentity.S3CanonicalUserId
             Action: s3:GetObject
-            Resource: !Join
-              - ""
-              - - "arn:aws:s3:::"
-                - !Ref FrontEndBucket
-                - "/*"
+            Resource: !Sub "arn:${AWS::Partition}:s3:::${FrontEndBucket}/*"
 
 Outputs:
   FrontendBucketName:
-    Description: "Name of the S3 bucket hosting the frontend"
+    Description: Name of the S3 bucket hosting the frontend
     Value: !Ref FrontEndBucket
+
   FrontEndBucketArn:
-    Description: "ARN of the S3 bucket hosting the frontend"
+    Description: ARN of the S3 bucket hosting the frontend
     Value: !Sub "arn:${AWS::Partition}:s3:::${FrontEndBucket}"
+
   BucketPolicyResourcePreview:
-    Description: "ARN of the S3 bucket for bucket policy reference"
+    Description: ARN of the S3 bucket for bucket policy reference
     Value: !Sub "arn:${AWS::Partition}:s3:::${FrontEndBucket}/*"
+
+  CloudFrontDomainName:
+    Description: CloudFront distribution domain name
+    Value: !GetAtt FrontendDistribution.DomainName
+
+  ShortenApiUrl:
+    Description: API path for creating short URLs through CloudFront
+    Value: !Sub "https://${FrontendDistribution.DomainName}/shorten"
+
+  RedirectBaseUrl:
+    Description: Base path for redirect URLs through CloudFront
+    Value: !Sub "https://${FrontendDistribution.DomainName}/r/"
