@@ -98,9 +98,32 @@ Resources:
           Properties:
             Pattern:
               source:
-              - url-shortener.redirect
+              - urlshortener.redirect
     Metadata:
       SamResourceId: AnalyticsProcessor
+  AnalyticsEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+        - urlshortener.redirect
+      Targets:
+      - Arn:
+          Fn::GetAtt:
+          - AnalyticsProcessor
+          - Arn
+        Id: AnalyticsProcessorTarget
+  AnalyticsProcessorPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: AnalyticsProcessor
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+        - AnalyticsEventRule
+        - Arn
   FrontEndBucket:
     Type: AWS::S3::Bucket
     Properties:

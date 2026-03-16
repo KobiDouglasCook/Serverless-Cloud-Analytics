@@ -105,7 +105,26 @@ Resources:
           Properties:
             Pattern:
               source:
-                - "url-shortener.redirect"
+                - "urlshortener.redirect"
+
+  # Analytics EventRule to trigger the AnalyticsProcessor Lambda function whenever a redirect event is emitted.
+  AnalyticsEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+          - "urlshortener.redirect"
+      Targets:
+        - Arn: !GetAtt AnalyticsProcessor.Arn
+          Id: "AnalyticsProcessorTarget"
+
+  AnalyticsProcessorPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AnalyticsProcessor
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AnalyticsEventRule.Arn
 
   # Frontend S3 bucket to host the static website with public access blocked and versioning enabled for better management
 

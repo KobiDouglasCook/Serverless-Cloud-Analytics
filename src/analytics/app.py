@@ -3,7 +3,7 @@ import boto3
 from datetime import datetime
 
 dynamodb = boto3.resource("dynamodb")
-events_table = dynamodb.Table("AnalyticsEvents")
+events_table = dynamodb.Table("AnalyticsEvent")
 
 def lambda_handler(event, context):
     # EventBridge sends events in an array under "Records" or directly as "detail"

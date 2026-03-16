@@ -21,11 +21,7 @@ def lambda_handler(event, context):
     response = table.get_item(Key={'shortCode': short_code})
     item = response.get('Item')
 
-    # Simulate a found item for testing purposes
-    # item = {
-    #     "longUrl": "https://www.fuegodomain.com",
-    #     "shortCode": short_code
-    # }
+
 
     if not item:
         return {
@@ -39,11 +35,13 @@ def lambda_handler(event, context):
     eventbridge.put_events(
         Entries=[
             {
-                'Source': 'urlshortener.analytics',
-                'DetailType': 'RedirectEvent',
-                'Detail': json.dumps({
-                    'shortCode': short_code,
-                    'timestamp': datetime.utcnow().isoformat()
+                "Source": "urlshortener.redirect",
+                "DetailType": "RedirectEvent",
+                "Detail": json.dumps({
+                    "shortCode": short_code,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "userAgent": event["headers"].get("User-Agent"),
+                    "ip": event["headers"].get("X-Forwarded-For"),
                 })
             }
         ]
