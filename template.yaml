@@ -150,6 +150,15 @@ Resources:
               QueryString: true
               Cookies:
                 Forward: none
+          - PathPattern: "/r/*"
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS]
+            CachedMethods: [GET, HEAD]
+            ForwardedValues:
+              QueryString: true
+              Cookies:
+                Forward: none
 
         DefaultCacheBehavior:
           TargetOriginId: FrontendOrigin
