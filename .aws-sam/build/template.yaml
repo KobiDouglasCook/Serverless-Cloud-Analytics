@@ -1,0 +1,226 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless URL Shortener with Analytics
+Globals:
+  Function:
+    Timeout: 5
+    Runtime: python3.12
+    Tracing: Active
+    MemorySize: 256
+Resources:
+  UrlTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: UrlTable
+      AttributeDefinitions:
+      - AttributeName: shortCode
+        AttributeType: S
+      KeySchema:
+      - AttributeName: shortCode
+        KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        Enabled: true
+        AttributeName: ttl
+  AnalyticsEvent:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: AnalyticsEvent
+      AttributeDefinitions:
+      - AttributeName: shortCode
+        AttributeType: S
+      - AttributeName: timestamp
+        AttributeType: S
+      KeySchema:
+      - AttributeName: shortCode
+        KeyType: HASH
+      - AttributeName: timestamp
+        KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+  ShortenFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/shorten/app.lambda_handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: UrlTable
+      Events:
+        ShortenApi:
+          Type: Api
+          Properties:
+            Path: /shorten
+            Method: POST
+      CodeUri: ShortenFunction
+    Metadata:
+      SamResourceId: ShortenFunction
+  RedirectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/redirect/app.lambda_handler
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName: UrlTable
+      - EventBridgePutEventsPolicy:
+          EventBusName: default
+      Events:
+        RedirectApi:
+          Type: Api
+          Properties:
+            Path: /{shortCode}
+            Method: GET
+      CodeUri: RedirectFunction
+    Metadata:
+      SamResourceId: RedirectFunction
+  AnalyticsProcessor:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/analytics/app.lambda_handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: AnalyticsEvent
+      Events:
+        AnalyticsEventRule:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+              - url-shortener.redirect
+      CodeUri: AnalyticsProcessor
+    Metadata:
+      SamResourceId: AnalyticsProcessor
+  FrontEndBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Sub: ${AWS::StackName}-frontend
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+  FrontendDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+        - Id: FrontendOrigin
+          DomainName:
+            Fn::GetAtt:
+            - FrontEndBucket
+            - RegionalDomainName
+          S3OriginConfig:
+            OriginAccessIdentity:
+              Fn::Sub: origin-access-identity/cloudfront/${FrontendOriginAccessIdentity}
+        - Id: ApiOrigin
+          DomainName:
+            Fn::Sub: ${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com
+          OriginPath: /Prod
+          CustomOriginConfig:
+            OriginProtocolPolicy: https-only
+        CacheBehaviors:
+        - PathPattern: /shorten
+          TargetOriginId: ApiOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          - PUT
+          - POST
+          - PATCH
+          - DELETE
+          CachedMethods:
+          - GET
+          - HEAD
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: none
+        - PathPattern: /api/*
+          TargetOriginId: ApiOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          - PUT
+          - POST
+          - PATCH
+          - DELETE
+          CachedMethods:
+          - GET
+          - HEAD
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: none
+        DefaultCacheBehavior:
+          TargetOriginId: FrontendOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+          - GET
+          - HEAD
+          CachedMethods:
+          - GET
+          - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        CustomErrorResponses:
+        - ErrorCode: 404
+          ResponseCode: 200
+          ResponsePagePath: /index.html
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+        PriceClass: PriceClass_100
+  FrontendOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment:
+          Fn::Sub: Access Identity for ${AWS::StackName} frontend
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DependsOn: FrontEndBucket
+    Properties:
+      Bucket:
+        Ref: FrontEndBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AllowCloudFrontRead
+          Effect: Allow
+          Principal:
+            CanonicalUser:
+              Fn::GetAtt:
+              - FrontendOriginAccessIdentity
+              - S3CanonicalUserId
+          Action: s3:GetObject
+          Resource:
+            Fn::Join:
+            - ''
+            - - 'arn:aws:s3:::'
+              - Ref: FrontEndBucket
+              - /*
+Outputs:
+  FrontendBucketName:
+    Description: Name of the S3 bucket hosting the frontend
+    Value:
+      Ref: FrontEndBucket
+  FrontEndBucketArn:
+    Description: ARN of the S3 bucket hosting the frontend
+    Value:
+      Fn::Sub: arn:${AWS::Partition}:s3:::${FrontEndBucket}
+  BucketPolicyResourcePreview:
+    Description: ARN of the S3 bucket for bucket policy reference
+    Value:
+      Fn::Sub: arn:${AWS::Partition}:s3:::${FrontEndBucket}/*
