@@ -8,5 +8,10 @@ async function shorten() {
     });
 
     const data = await response.json();
-    document.getElementById("result").innerText = data.shortUrl || data.error;
+    console.log("RAW /shorten RESPONSE:", data);
+
+    const payload = data;
+
+    document.getElementById("result").innerText =
+        payload.shortUrl || payload.error || "Unexpected response";
 }

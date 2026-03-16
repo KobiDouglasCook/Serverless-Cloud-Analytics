@@ -5,7 +5,8 @@ import string
 import random 
 from datetime import datetime, timedelta
 
-CLOUDFRONT_DOMAIN = os.environ("CLOUDFRONT_DOMAIN")
+CLOUDFRONT_DOMAIN = os.environ["CLOUDFRONT_DOMAIN"]
+
 
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table("UrlTable")
@@ -16,6 +17,7 @@ def generate_short_code(length=6):
     return short_code
 
 def lambda_handler(event, context):
+    print("ShortenFunction invoked with event:", event)
     body = json.loads(event.get('body', '{}'))
     long_url = body.get('longUrl')
 
@@ -43,10 +45,14 @@ def lambda_handler(event, context):
     table.put_item(Item=item)
 
     return { 
-        "statusCode": 200,
-        "body": json.dumps({
-            "shortCode": short_code,
-            "shortUrl": f"https://{CLOUDFRONT_DOMAIN}/r/{short_code}",
-            "expiresAt": ttl_timestamp
-        })
-    }
+    "statusCode": 200,
+    "headers": {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+    },
+    "body": json.dumps({
+        "shortCode": short_code,
+        "shortUrl": f"https://{CLOUDFRONT_DOMAIN}/r/{short_code}",
+        "expiresAt": ttl_timestamp
+    })
+}

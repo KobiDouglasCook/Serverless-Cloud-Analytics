@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Serverless URL Shortener with Analytics
+Parameters:
+  CloudFrontDomainParam:
+    Type: String
+    Default: d2tw8akj4z99nh.cloudfront.net
+    Description: CloudFront distribution domain name for constructing short URLs
 Globals:
   Function:
     Timeout: 5
@@ -44,23 +49,28 @@ Resources:
   ShortenFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/shorten/app.lambda_handler
+      Handler: app.lambda_handler
+      CodeUri: ShortenFunction
       Policies:
       - DynamoDBCrudPolicy:
           TableName: UrlTable
+      Environment:
+        Variables:
+          CLOUDFRONT_DOMAIN:
+            Ref: CloudFrontDomainParam
       Events:
         ShortenApi:
           Type: Api
           Properties:
             Path: /shorten
             Method: POST
-      CodeUri: ShortenFunction
     Metadata:
       SamResourceId: ShortenFunction
   RedirectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/redirect/app.lambda_handler
+      Handler: app.lambda_handler
+      CodeUri: RedirectFunction
       Policies:
       - DynamoDBReadPolicy:
           TableName: UrlTable
@@ -72,13 +82,13 @@ Resources:
           Properties:
             Path: /r/{shortCode}
             Method: GET
-      CodeUri: RedirectFunction
     Metadata:
       SamResourceId: RedirectFunction
   AnalyticsProcessor:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/analytics/app.lambda_handler
+      Handler: app.lambda_handler
+      CodeUri: AnalyticsProcessor
       Policies:
       - DynamoDBCrudPolicy:
           TableName: AnalyticsEvent
@@ -89,7 +99,6 @@ Resources:
             Pattern:
               source:
               - url-shortener.redirect
-      CodeUri: AnalyticsProcessor
     Metadata:
       SamResourceId: AnalyticsProcessor
   FrontEndBucket:

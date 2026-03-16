@@ -59,7 +59,8 @@ Resources:
   ShortenFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/shorten/app.lambda_handler
+      Handler: app.lambda_handler
+      CodeUri: src/shorten/
       Policies:
         - DynamoDBCrudPolicy:
             TableName: UrlTable
@@ -76,7 +77,8 @@ Resources:
   RedirectFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/redirect/app.lambda_handler
+      Handler: app.lambda_handler
+      CodeUri: src/redirect/
       Policies:
         - DynamoDBReadPolicy:
             TableName: UrlTable
@@ -92,7 +94,8 @@ Resources:
   AnalyticsProcessor:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/analytics/app.lambda_handler
+      Handler: app.lambda_handler
+      CodeUri: src/analytics/
       Policies:
         - DynamoDBCrudPolicy:
             TableName: AnalyticsEvent
