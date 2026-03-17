@@ -12,6 +12,26 @@ async function shorten() {
 
     const payload = data;
 
-    document.getElementById("result").innerText =
-        payload.shortUrl || payload.error || "Unexpected response";
+    // Update UI with short URL + dynamic analytics button
+    document.getElementById("result").innerHTML = `
+        <p><strong>Short URL:</strong> 
+            <a href="${payload.shortUrl}" target="_blank">${payload.shortUrl}</a>
+        </p>
+
+        <a 
+            href="/analytics.html?code=${payload.shortCode}"
+            style="
+                display: inline-block;
+                margin-top: 12px;
+                padding: 10px 16px;
+                background-color: #2563eb;
+                color: white;
+                border-radius: 6px;
+                text-decoration: none;
+                font-weight: 500;
+            "
+        >
+            View Analytics for This URL
+        </a>
+    `;
 }

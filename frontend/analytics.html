@@ -1,27 +1,138 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Analytics</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analytics Dashboard</title>
+
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<body>
-    <h1>Analytics</h1>
+<body class="bg-gray-100 text-gray-900">
+    <div class="max-w-4xl mx-auto py-10">
+        <h1 class="text-3xl font-bold mb-6">Analytics Dashboard</h1>
 
-    <input id="shortCode" placeholder="Enter short code">
-    <button onclick="loadAnalytics()">Load</button>
+        <!-- Input -->
+        <div class="flex gap-3 mb-6">
+            <input id="shortCode" class="flex-1 px-4 py-2 border rounded"
+                placeholder="Enter short code (e.g. oP4InN)" />
+            <button onclick="loadAnalytics()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Load
+            </button>
+        </div>
 
-    <pre id="output"></pre>
+        <!-- Summary Cards -->
+        <div id="summary" class="grid grid-cols-3 gap-4 mb-8 hidden">
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-sm text-gray-500">Destination URL</h2>
+                <p id="longUrl" class="font-semibold break-all"></p>
+            </div>
+
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-sm text-gray-500">Created At</h2>
+                <p id="createdAt" class="font-semibold"></p>
+            </div>
+
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-sm text-gray-500">Total Clicks</h2>
+                <p id="clickCount" class="font-semibold text-2xl"></p>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="bg-white p-6 rounded shadow mb-8 hidden" id="chartContainer">
+            <h2 class="text-lg font-semibold mb-4">Click Timeline</h2>
+            <canvas id="clickChart" height="100"></canvas>
+        </div>
+
+        <!-- Events Table -->
+        <div class="bg-white p-6 rounded shadow hidden" id="eventsContainer">
+            <h2 class="text-lg font-semibold mb-4">Event Log</h2>
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="border-b">
+                        <th class="py-2">Timestamp</th>
+                        <th class="py-2">IP</th>
+                        <th class="py-2">User Agent</th>
+                    </tr>
+                </thead>
+                <tbody id="eventsTable"></tbody>
+            </table>
+        </div>
+    </div>
 
     <script>
+        let chart;
+
+        // Auto-load analytics if ?code=XYZ is present
+        window.onload = () => {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get("code");
+
+            if (code) {
+                document.getElementById("shortCode").value = code;
+                loadAnalytics();
+            }
+        };
+
         async function loadAnalytics() {
-            const code = document.getElementById("shortCode").value;
+            const code = document.getElementById("shortCode").value.trim();
+            if (!code) return;
 
             const response = await fetch(`/analytics/${code}`);
             const data = await response.json();
 
-            document.getElementById("output").innerText =
-                JSON.stringify(data, null, 2);
+            // Show summary
+            document.getElementById("summary").classList.remove("hidden");
+            document.getElementById("longUrl").innerText = data.longUrl;
+            document.getElementById("createdAt").innerText = data.createdAt;
+            document.getElementById("clickCount").innerText = data.clickCount;
+
+            // Build timeline chart
+            const timestamps = data.events.map(e => e.timestamp);
+            const counts = timestamps.map((_, i) => i + 1);
+
+            if (chart) chart.destroy();
+
+            if (timestamps.length > 0) {
+                document.getElementById("chartContainer").classList.remove("hidden");
+
+                const ctx = document.getElementById("clickChart").getContext("2d");
+                chart = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: timestamps,
+                        datasets: [{
+                            label: "Clicks Over Time",
+                            data: counts,
+                            borderColor: "rgb(37, 99, 235)",
+                            backgroundColor: "rgba(37, 99, 235, 0.3)",
+                            tension: 0.3
+                        }]
+                    }
+                });
+            }
+
+            // Build events table
+            const table = document.getElementById("eventsTable");
+            table.innerHTML = "";
+
+            data.events.forEach(e => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+          <td class="py-2">${e.timestamp}</td>
+          <td class="py-2">${e.ip || "-"}</td>
+          <td class="py-2">${e.userAgent || "-"}</td>
+        `;
+                table.appendChild(row);
+            });
+
+            document.getElementById("eventsContainer").classList.remove("hidden");
         }
     </script>
 </body>

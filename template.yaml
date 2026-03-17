@@ -179,44 +179,44 @@ Resources:
               OriginProtocolPolicy: https-only
 
         CacheBehaviors:
-          - PathPattern: "/shorten"
+          - PathPattern: "shorten"
             TargetOriginId: ApiOrigin
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
             CachedMethods: [GET, HEAD]
-            ForwardedValues:
-              QueryString: true
-              Cookies:
-                Forward: none
+            CachePolicyId: "Managed-CachingDisabled"
+            OriginRequestPolicyId: "Managed-AllViewerExceptHostHeader"
 
-          - PathPattern: "/api/*"
+          - PathPattern: "api/*"
             TargetOriginId: ApiOrigin
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
             CachedMethods: [GET, HEAD]
-            ForwardedValues:
-              QueryString: true
-              Cookies:
-                Forward: none
-          - PathPattern: "/r/*"
+            CachePolicyId: "Managed-CachingDisabled"
+            OriginRequestPolicyId: "Managed-AllViewerExceptHostHeader"
+
+          - PathPattern: "r/*"
             TargetOriginId: ApiOrigin
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods: [GET, HEAD, OPTIONS]
             CachedMethods: [GET, HEAD]
-            ForwardedValues:
-              QueryString: true
-              Cookies:
-                Forward: none
+            CachePolicyId: "Managed-CachingDisabled"
+            OriginRequestPolicyId: "Managed-AllViewerExceptHostHeader"
+
+          - PathPattern: "analytics/*"
+            TargetOriginId: ApiOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS]
+            CachePolicyId: "Managed-CachingDisabled"
+            OriginRequestPolicyId: "Managed-AllViewerExceptHostHeader"
 
         DefaultCacheBehavior:
           TargetOriginId: FrontendOrigin
           ViewerProtocolPolicy: redirect-to-https
           AllowedMethods: [GET, HEAD]
           CachedMethods: [GET, HEAD]
-          ForwardedValues:
-            QueryString: false
-            Cookies:
-              Forward: none
+          CachePolicyId: "Managed-CachingDisabled"
+          OriginRequestPolicyId: "Managed-AllViewerExceptHostHeader"
 
         CustomErrorResponses:
           - ErrorCode: 404
