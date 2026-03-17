@@ -190,8 +190,8 @@ Resources:
           CachedMethods:
           - GET
           - HEAD
-          CachePolicyId: Managed-CachingDisabled
-          OriginRequestPolicyId: Managed-AllViewerExceptHostHeader
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
         - PathPattern: api/*
           TargetOriginId: ApiOrigin
           ViewerProtocolPolicy: redirect-to-https
@@ -206,8 +206,8 @@ Resources:
           CachedMethods:
           - GET
           - HEAD
-          CachePolicyId: Managed-CachingDisabled
-          OriginRequestPolicyId: Managed-AllViewerExceptHostHeader
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
         - PathPattern: r/*
           TargetOriginId: ApiOrigin
           ViewerProtocolPolicy: redirect-to-https
@@ -218,8 +218,8 @@ Resources:
           CachedMethods:
           - GET
           - HEAD
-          CachePolicyId: Managed-CachingDisabled
-          OriginRequestPolicyId: Managed-AllViewerExceptHostHeader
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
         - PathPattern: analytics/*
           TargetOriginId: ApiOrigin
           ViewerProtocolPolicy: redirect-to-https
@@ -227,8 +227,8 @@ Resources:
           - GET
           - HEAD
           - OPTIONS
-          CachePolicyId: Managed-CachingDisabled
-          OriginRequestPolicyId: Managed-AllViewerExceptHostHeader
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
         DefaultCacheBehavior:
           TargetOriginId: FrontendOrigin
           ViewerProtocolPolicy: redirect-to-https
@@ -238,8 +238,8 @@ Resources:
           CachedMethods:
           - GET
           - HEAD
-          CachePolicyId: Managed-CachingDisabled
-          OriginRequestPolicyId: Managed-AllViewerExceptHostHeader
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
         CustomErrorResponses:
         - ErrorCode: 404
           ResponseCode: 200
