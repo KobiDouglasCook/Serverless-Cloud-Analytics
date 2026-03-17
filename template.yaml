@@ -107,6 +107,23 @@ Resources:
               source:
                 - "urlshortener.redirect"
 
+  AnalyticsApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: src/analytics_api/
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: AnalyticsEvent
+        - DynamoDBReadPolicy:
+            TableName: UrlTable
+      Events:
+        AnalyticsApi:
+          Type: Api
+          Properties:
+            Path: /analytics/{shortCode}
+            Method: GET
+
   # Analytics EventRule to trigger the AnalyticsProcessor Lambda function whenever a redirect event is emitted.
   AnalyticsEventRule:
     Type: AWS::Events::Rule

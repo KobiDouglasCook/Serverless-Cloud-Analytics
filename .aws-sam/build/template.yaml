@@ -101,6 +101,24 @@ Resources:
               - urlshortener.redirect
     Metadata:
       SamResourceId: AnalyticsProcessor
+  AnalyticsApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambda_handler
+      CodeUri: AnalyticsApi
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName: AnalyticsEvent
+      - DynamoDBReadPolicy:
+          TableName: UrlTable
+      Events:
+        AnalyticsApi:
+          Type: Api
+          Properties:
+            Path: /analytics/{shortCode}
+            Method: GET
+    Metadata:
+      SamResourceId: AnalyticsApi
   AnalyticsEventRule:
     Type: AWS::Events::Rule
     Properties:

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Analytics</title>
+</head>
+
+<body>
+    <h1>Analytics</h1>
+
+    <input id="shortCode" placeholder="Enter short code">
+    <button onclick="loadAnalytics()">Load</button>
+
+    <pre id="output"></pre>
+
+    <script>
+        async function loadAnalytics() {
+            const code = document.getElementById("shortCode").value;
+
+            const response = await fetch(`/analytics/${code}`);
+            const data = await response.json();
+
+            document.getElementById("output").innerText =
+                JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+
+</html>
