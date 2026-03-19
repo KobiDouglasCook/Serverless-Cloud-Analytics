@@ -4,7 +4,7 @@ Description: Serverless URL Shortener with Analytics
 Parameters:
   CloudFrontDomainParam:
     Type: String
-    Default: d2tw8akj4z99nh.cloudfront.net
+    Default: d21sqexfhvaqit.cloudfront.net
     Description: CloudFront distribution domain name for constructing short URLs
 Globals:
   Function:
@@ -72,7 +72,7 @@ Resources:
       Handler: app.lambda_handler
       CodeUri: RedirectFunction
       Policies:
-      - DynamoDBReadPolicy:
+      - DynamoDBCrudPolicy:
           TableName: UrlTable
       - EventBridgePutEventsPolicy:
           EventBusName: default

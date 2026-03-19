@@ -2,9 +2,8 @@ import json
 import boto3
 from datetime import datetime
 
- 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table("UrlTable")  
+table = dynamodb.Table("UrlTable")
 
 eventbridge = boto3.client('events')
 
@@ -16,20 +15,28 @@ def lambda_handler(event, context):
             'statusCode': 400,
             'body': json.dumps({'error': 'shortCode is required'})
         }
-    
+
     # Lookup the short code in DynamoDB
     response = table.get_item(Key={'shortCode': short_code})
     item = response.get('Item')
-
-
 
     if not item:
         return {
             'statusCode': 404,
             'body': json.dumps({'error': 'Short URL not found'})
         }
-    
+
     long_url = item['longUrl']
+
+    # Increment click count
+    table.update_item(
+        Key={'shortCode': short_code},
+        UpdateExpression="SET clickCount = if_not_exists(clickCount, :zero) + :inc",
+        ExpressionAttributeValues={
+            ":inc": 1,
+            ":zero": 0
+        }
+    )
 
     # Record the redirect event in EventBridge for analytics
     eventbridge.put_events(
