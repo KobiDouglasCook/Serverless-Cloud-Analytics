@@ -4,6 +4,13 @@ A globally distributed, production‑grade serverless application built on AWS. 
 
 This repository is designed as a portfolio‑quality example of cloud engineering, emphasizing scalability, security, cost optimization, and operational excellence.
 
+
+<img width="1056" height="946" alt="000" src="https://github.com/user-attachments/assets/a23f2954-214d-4273-b015-f5283f184e09" />
+
+
+
+
+
 ---
 
 # Overview
