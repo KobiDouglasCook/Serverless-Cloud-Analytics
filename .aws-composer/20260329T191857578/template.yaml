@@ -5,8 +5,8 @@ Description: Serverless URL Shortener with Analytics
 Parameters:
   CloudFrontDomainParam:
     Type: String
-    Default: d21sqexfhvaqit.cloudfront.net # Default value for local testing, should be overridden
-    Description: CloudFront distribution domain name for constructing short URLs
+    Default: "d21sqexfhvaqit.cloudfront.net" # Default value for local testing, should be overridden
+    Description: "CloudFront distribution domain name for constructing short URLs"
 
 Globals:
   Function:
@@ -105,7 +105,7 @@ Resources:
           Properties:
             Pattern:
               source:
-                - urlshortener.redirect
+                - "urlshortener.redirect"
 
   AnalyticsApi:
     Type: AWS::Serverless::Function
@@ -130,10 +130,10 @@ Resources:
     Properties:
       EventPattern:
         source:
-          - urlshortener.redirect
+          - "urlshortener.redirect"
       Targets:
         - Arn: !GetAtt AnalyticsProcessor.Arn
-          Id: AnalyticsProcessorTarget
+          Id: "AnalyticsProcessorTarget"
 
   AnalyticsProcessorPermission:
     Type: AWS::Lambda::Permission
@@ -148,7 +148,7 @@ Resources:
   FrontEndBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${AWS::StackName}-frontend
+      BucketName: !Sub "${AWS::StackName}-frontend"
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -170,88 +170,58 @@ Resources:
           - Id: FrontendOrigin
             DomainName: !GetAtt FrontEndBucket.RegionalDomainName
             S3OriginConfig:
-              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${FrontendOriginAccessIdentity}
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${FrontendOriginAccessIdentity}"
 
           - Id: ApiOrigin
-            DomainName: !Sub ${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com
-            OriginPath: /Prod
+            DomainName: !Sub "${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com"
+            OriginPath: "/Prod"
             CustomOriginConfig:
               OriginProtocolPolicy: https-only
 
         CacheBehaviors:
-          - PathPattern: shorten
+          - PathPattern: "shorten"
             TargetOriginId: ApiOrigin
             ViewerProtocolPolicy: redirect-to-https
-            AllowedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
-              - PUT
-              - POST
-              - PATCH
-              - DELETE
-            CachedMethods:
-              - GET
-              - HEAD
-            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
-            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachedMethods: [GET, HEAD]
+            CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+            OriginRequestPolicyId: "b689b0a8-53d0-40ab-baf2-68738e2966ac"
 
-          - PathPattern: api/*
+          - PathPattern: "api/*"
             TargetOriginId: ApiOrigin
             ViewerProtocolPolicy: redirect-to-https
-            AllowedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
-              - PUT
-              - POST
-              - PATCH
-              - DELETE
-            CachedMethods:
-              - GET
-              - HEAD
-            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
-            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachedMethods: [GET, HEAD]
+            CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+            OriginRequestPolicyId: "b689b0a8-53d0-40ab-baf2-68738e2966ac"
 
-          - PathPattern: r/*
+          - PathPattern: "r/*"
             TargetOriginId: ApiOrigin
             ViewerProtocolPolicy: redirect-to-https
-            AllowedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
-            CachedMethods:
-              - GET
-              - HEAD
-            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
-            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS]
+            CachedMethods: [GET, HEAD]
+            CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+            OriginRequestPolicyId: "b689b0a8-53d0-40ab-baf2-68738e2966ac"
 
-          - PathPattern: analytics/*
+          - PathPattern: "analytics/*"
             TargetOriginId: ApiOrigin
             ViewerProtocolPolicy: redirect-to-https
-            AllowedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
-            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
-            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            AllowedMethods: [GET, HEAD, OPTIONS]
+            CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+            OriginRequestPolicyId: "b689b0a8-53d0-40ab-baf2-68738e2966ac"
 
         DefaultCacheBehavior:
           TargetOriginId: FrontendOrigin
           ViewerProtocolPolicy: redirect-to-https
-          AllowedMethods:
-            - GET
-            - HEAD
-          CachedMethods:
-            - GET
-            - HEAD
-          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
-          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+          OriginRequestPolicyId: "b689b0a8-53d0-40ab-baf2-68738e2966ac"
 
         CustomErrorResponses:
           - ErrorCode: 404
             ResponseCode: 200
-            ResponsePagePath: /index.html
+            ResponsePagePath: "/index.html"
 
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
@@ -265,21 +235,21 @@ Resources:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
     Properties:
       CloudFrontOriginAccessIdentityConfig:
-        Comment: !Sub Access Identity for ${AWS::StackName} frontend
+        Comment: !Sub "Access Identity for ${AWS::StackName} frontend"
 
   FrontendBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
       Bucket: !Ref FrontEndBucket
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Sid: AllowCloudFrontRead
             Effect: Allow
             Principal:
               CanonicalUser: !GetAtt FrontendOriginAccessIdentity.S3CanonicalUserId
             Action: s3:GetObject
-            Resource: !Sub arn:${AWS::Partition}:s3:::${FrontEndBucket}/*
+            Resource: !Sub "arn:${AWS::Partition}:s3:::${FrontEndBucket}/*"
 
 Outputs:
   FrontendBucketName:
@@ -288,11 +258,11 @@ Outputs:
 
   FrontEndBucketArn:
     Description: ARN of the S3 bucket hosting the frontend
-    Value: !Sub arn:${AWS::Partition}:s3:::${FrontEndBucket}
+    Value: !Sub "arn:${AWS::Partition}:s3:::${FrontEndBucket}"
 
   BucketPolicyResourcePreview:
     Description: ARN of the S3 bucket for bucket policy reference
-    Value: !Sub arn:${AWS::Partition}:s3:::${FrontEndBucket}/*
+    Value: !Sub "arn:${AWS::Partition}:s3:::${FrontEndBucket}/*"
 
   CloudFrontDomainName:
     Description: CloudFront distribution domain name
@@ -300,8 +270,8 @@ Outputs:
 
   ShortenApiUrl:
     Description: API path for creating short URLs through CloudFront
-    Value: !Sub https://${FrontendDistribution.DomainName}/shorten
+    Value: !Sub "https://${FrontendDistribution.DomainName}/shorten"
 
   RedirectBaseUrl:
     Description: Base path for redirect URLs through CloudFront
-    Value: !Sub https://${FrontendDistribution.DomainName}/r/
+    Value: !Sub "https://${FrontendDistribution.DomainName}/r/"
